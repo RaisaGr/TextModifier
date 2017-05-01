@@ -1,7 +1,8 @@
 package it.localpc.stringModify.service;
 
 import java.util.Scanner;
-import java.util.regex.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Modifier {
 
@@ -28,46 +29,44 @@ public class Modifier {
 
 //	 general function with all modification
 	 public static String textModify(String defaultStr){
-		 String newStr = "";
 		 String tmpStr = "";
-		 StringBuffer stringBuilder = new StringBuffer();
-		 int i;
+		 StringBuilder stringBuilder = new StringBuilder();
 		 
 		 if (defaultStr.length() > 0){
 			 
 			 tmpStr = modifySpecSymbols(defaultStr);	
 			 tmpStr = changeSymbol(tmpStr);
-			 tmpStr = removeDouble(tmpStr);
 			 
 			 String[] arrayOfString = tmpStr.split(" "); 	
 			 
-			 for (i = 0; i < arrayOfString.length; i++) {
+			 for (int i = 0; i < arrayOfString.length; i++) {
 				 	tmpStr = arrayOfString[i];
 			
 				 	if (!tmpStr.equals("")){
-						tmpStr = removeSymbolEndWord(tmpStr);
-						tmpStr = removeArticles(tmpStr);
+				 		tmpStr = removeArticles(tmpStr);
+				 		if (!tmpStr.equals("")){
+				 			tmpStr = removeDouble(tmpStr);
+				 			tmpStr = removeSymbolEndWord(tmpStr);
 						
-						String pattern = "[\\W]+";
-						Pattern p = Pattern.compile(pattern);
-						Matcher m = p.matcher(tmpStr.trim()); 
-						if (!tmpStr.equals("")){
-							if(m.find()){
-								stringBuilder.append(tmpStr);
-							}else{
-								if (stringBuilder.equals("")){
-									stringBuilder.append(tmpStr);
-								}else{
-									stringBuilder.append(" " + tmpStr);
-								}
-							}
-						}
+				 			String pattern = "[\\W]+";
+				 			Pattern p = Pattern.compile(pattern);
+				 			Matcher m = p.matcher(tmpStr.trim()); 
+				 			if (!tmpStr.equals("")){
+				 				if(m.find()){
+				 					stringBuilder.append(tmpStr);
+				 				}else{
+				 					if (stringBuilder.toString().equals("")){
+				 						stringBuilder.append(tmpStr);
+				 					}else{
+				 						stringBuilder.append(" " + tmpStr);
+				 					}
+				 				}
+				 			}
+				 		}	
 				 	}
 				}
-			 
-			 newStr = stringBuilder.toString();
 		 }
-		 return newStr.trim();
+		 return stringBuilder.toString().trim();
 	 }
 	 
 //	 function for add " " before special symbols
@@ -80,7 +79,11 @@ public class Modifier {
 		 
 		 int beg = 0;
 		 while(m.find(beg)) {
-			tmpStr = tmpStr + tempString.substring(beg, m.start()) + " " + tempString.substring(m.start(), m.end());
+			 if(tempString.substring(m.start(), m.end()).equals(" ")){
+				 tmpStr = tmpStr + tempString.substring(beg, m.end());
+			 }else{
+				 tmpStr = tmpStr + tempString.substring(beg, m.start()) + " " + tempString.substring(m.start(), m.end()) + " ";
+			 }
 			beg = m.end();
 		 }
 		
@@ -104,19 +107,21 @@ public class Modifier {
 
 //	function for change using regex
 	public static String patternChange(String tmpString, String patternFrom, String patternTo){
-		String pattern = patternFrom;
-		Pattern p = Pattern.compile(pattern);
+//		String pattern = patternFrom;
+		Pattern p = Pattern.compile(patternFrom);
 		Matcher m = p.matcher(tmpString); 
 
 		tmpString = m.replaceAll(patternTo);
+		System.out.println(tmpString);
 		return tmpString;
 	}
 	
 //	function for remove double symbols
 	public static String removeDouble(String tempString) {
 		
-		StringBuffer stringBuilder = new StringBuffer();
-		int i;
+		StringBuilder stringBuilder = new StringBuilder();
+		String pattern = "[\\W]+";
+		Pattern p = Pattern.compile(pattern);
 		
 		tempString = patternChange(tempString, "ee", "i");
 		tempString = patternChange(tempString, "oo", "u");
@@ -125,10 +130,15 @@ public class Modifier {
 		
 		stringBuilder.append(characters[0]);
 		
-		for (i = 0; i < tempString.length()-1; i++) {
-			
+		for (int i = 0; i < tempString.length()-1; i++) {
 			if (characters[i] != characters[i+1]) {
 				stringBuilder.append(characters[i+1]);
+			}else{
+//				check if this symbol is not a letter, save double symbol
+				Matcher m = p.matcher(Character.toString(characters[i+1])); 
+				if(m.find()){
+					stringBuilder.append(characters[i+1]);
+				}
 			}
 		}
 		
@@ -154,7 +164,7 @@ public class Modifier {
 //	function for remove articles
 	public static String removeArticles(String tempString) {
 		
-		tempString = patternChange(tempString, "^[Tt]h$", "");
+		tempString = patternChange(tempString, "^[Tt]he$", "");
 		tempString = patternChange(tempString, "^[Aa]n$", "");
 		tempString = patternChange(tempString, "^[Aa]$", "");
 		
